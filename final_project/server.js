@@ -417,3 +417,105 @@ app.get('/search', isAuthenticated, (req, res) => {
         });
     });
 });
+
+// ============================================
+// ROUTES: FILE UPLOAD
+// ============================================
+
+/**
+ * GET /upload
+ * Renders the file upload form
+ */
+app.get('/upload', isAuthenticated, (req, res) => {
+    res.render('upload', { user: req.session.user });
+});
+
+/**
+ * POST /upload-vulnerable
+ * VULNERABLE FILE UPLOAD - No restrictions
+ * Accepts any file type, any size
+ * FOR DEMONSTRATION PURPOSES ONLY
+ * 
+ * RISKS:
+ * - Malicious file upload (web shells)
+ * - Denial of Service (large files)
+ * - Information disclosure
+ */
+app.post('/upload-vulnerable', isAuthenticated, vulnerableUpload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.send('No file uploaded.');
+    }
+    
+    // Store file metadata
+    db.run('INSERT INTO files (filename, path, uploaded_by) VALUES (?, ?, ?)',
+        [req.file.originalname, req.file.path, req.session.user.id],
+        (err) => {
+            if (err) {
+                logger.error(`Database error on vulnerable upload: ${err.message}`);
+                return res.send('Database error.');
+            }
+            auditLog(`File uploaded (VULNERABLE): ${req.file.originalname}`, 
+                req.session.user.username);
+            
+            res.send(`
+                <h2>File Uploaded (VULNERABLE)</h2>
+                <p><strong>Warning:</strong> No file type or size restrictions were enforced.</p>
+                <p>Filename: ${req.file.originalname}</p>
+                <p>Size: ${req.file.size} bytes</p>
+                <p>Path: ${req.file.path}</p>
+                <a href="/dashboard">Back to Dashboard</a>
+            `);
+        }
+    );
+});
+
+/**
+ * POST /upload
+ * SECURE FILE UPLOAD - With validation
+ * 
+ * SECURITY CONTROLS:
+ * - File size limit: 1MB
+ * - MIME type validation: only PNG, JPEG, PDF
+ * - Files stored with random names to prevent path traversal
+ * OWASP A05: Security Misconfiguration (Mitigated)
+ */
+app.post('/upload', isAuthenticated, (req, res, next) => {
+    secureUpload.single('file')(req, res, (err) => {
+        if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                auditLog(`Upload rejected - file too large`, req.session.user.username);
+                return res.status(400).send('File too large. Maximum size is 1MB.');
+            }
+            if (err.message.includes('Invalid file type')) {
+                auditLog(`Upload rejected - invalid file type`, req.session.user.username);
+                return res.status(400).send('Invalid file type. Only PNG, JPEG, and PDF are allowed.');
+            }
+            return res.status(500).send('Upload error.');
+        }
+        
+        if (!req.file) {
+            return res.send('No file uploaded.');
+        }
+        
+        // Store file metadata in database
+        db.run('INSERT INTO files (filename, path, uploaded_by) VALUES (?, ?, ?)',
+            [req.file.originalname, req.file.path, req.session.user.id],
+            (dbErr) => {
+                if (dbErr) {
+                    logger.error(`Database error on secure upload: ${dbErr.message}`);
+                    return res.send('Database error.');
+                }
+                auditLog(`File uploaded (SECURE): ${req.file.originalname}`, 
+                    req.session.user.username);
+                
+                res.send(`
+                    <h2>File Uploaded (SECURE)</h2>
+                    <p>Validation: File type and size checked</p>
+                    <p>Filename: ${req.file.originalname}</p>
+                    <p>Size: ${req.file.size} bytes</p>
+                    <a href="/dashboard">Back to Dashboard</a>
+                `);
+            }
+        );
+    });
+});
