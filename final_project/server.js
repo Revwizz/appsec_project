@@ -441,32 +441,38 @@ app.get('/upload', isAuthenticated, (req, res) => {
  * - Denial of Service (large files)
  * - Information disclosure
  */
-app.post('/upload-vulnerable', isAuthenticated, vulnerableUpload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.send('No file uploaded.');
-    }
-    
-    // Store file metadata
-    db.run('INSERT INTO files (filename, path, uploaded_by) VALUES (?, ?, ?)',
-        [req.file.originalname, req.file.path, req.session.user.id],
-        (err) => {
-            if (err) {
-                logger.error(`Database error on vulnerable upload: ${err.message}`);
-                return res.send('Database error.');
-            }
-            auditLog(`File uploaded (VULNERABLE): ${req.file.originalname}`, 
-                req.session.user.username);
-            
-            res.send(`
-                <h2>File Uploaded (VULNERABLE)</h2>
-                <p><strong>Warning:</strong> No file type or size restrictions were enforced.</p>
-                <p>Filename: ${req.file.originalname}</p>
-                <p>Size: ${req.file.size} bytes</p>
-                <p>Path: ${req.file.path}</p>
-                <a href="/dashboard">Back to Dashboard</a>
-            `);
+app.post('/upload-vulnerable', isAuthenticated, (req, res, next) => {
+    vulnerableUpload.single('file')(req, res, (err) => {
+        if (err) {
+            logger.error(`Vulnerable upload error: ${err.message}`);
+            return res.status(500).send(`Upload failed: ${err.message}`);
         }
-    );
+        
+        if (!req.file) {
+            return res.send('No file uploaded.');
+        }
+        
+        db.run('INSERT INTO files (filename, path, uploaded_by) VALUES (?, ?, ?)',
+            [req.file.originalname, req.file.path, req.session.user.id],
+            (dbErr) => {
+                if (dbErr) {
+                    logger.error(`Database error on vulnerable upload: ${dbErr.message}`);
+                    return res.status(500).send('Database error.');
+                }
+                auditLog(`File uploaded (VULNERABLE): ${req.file.originalname}`, 
+                    req.session.user.username);
+                
+                res.send(`
+                    <h2>File Uploaded (VULNERABLE)</h2>
+                    <p><strong>Warning:</strong> No file type or size restrictions were enforced.</p>
+                    <p>Filename: ${req.file.originalname}</p>
+                    <p>Size: ${req.file.size} bytes</p>
+                    <p>Path: ${req.file.path}</p>
+                    <a href="/dashboard">Back to Dashboard</a>
+                `);
+            }
+        );
+    });
 });
 
 /**
