@@ -1,0 +1,119 @@
+<!--
+    FILE: admin.ejs
+    PROJECT: SECU2000 - Secure Student Portal
+    DESCRIPTION:
+        Admin panel view. Displays all grades with mode indicator.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .mode-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .mode-vulnerable {
+            background-color: #dc3545;
+            color: white;
+        }
+        .mode-secure {
+            background-color: #28a745;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .back-link {
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .warning-message {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Panel - All Grades</h1>
+        
+        <div class="mode-badge <%= mode.includes('VULNERABLE') ? 'mode-vulnerable' : 'mode-secure' %>">
+            Mode: <%= mode %>
+        </div>
+        
+        <div class="back-link">
+            <a href="/dashboard">← Back to Dashboard</a>
+        </div>
+        
+        <% if (mode.includes('VULNERABLE')) { %>
+            <div class="warning-message">
+                <strong>VULNERABLE:</strong> This panel is accessible by ANY authenticated user due to missing role check. 
+                (OWASP A01: Broken Access Control)
+            </div>
+        <% } else { %>
+            <div class="warning-message" style="background-color: #d4edda; border-color: #c3e6cb;">
+                <strong>SECURE:</strong> This panel is protected by RBAC middleware. Only users with 'admin' role can access.
+            </div>
+        <% } %>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Student Name</th>
+                    <th>Course</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% grades.forEach(grade => { %>
+                    <tr>
+                        <td><%= grade.id %></td>
+                        <td><%= grade.student_name %></td>
+                        <td><%= grade.course %></td>
+                        <td><%= grade.grade %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

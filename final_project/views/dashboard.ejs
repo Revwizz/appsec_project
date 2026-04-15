@@ -1,0 +1,147 @@
+<!--
+    FILE: dashboard.ejs
+    PROJECT: SECU2000 - Secure Student Portal
+    DESCRIPTION:
+        Main dashboard after login. Displays navigation to all features.
+        Shows user role and available actions.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Student Portal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .user-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+        }
+        .role-badge {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .nav-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .nav-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .nav-card a {
+            display: inline-block;
+            margin: 5px 10px 5px 0;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .nav-card a:hover {
+            text-decoration: underline;
+        }
+        .vulnerable {
+            border-left-color: #dc3545;
+        }
+        .secure {
+            border-left-color: #28a745;
+        }
+        .logout {
+            margin-top: 30px;
+            text-align: right;
+        }
+        .logout a {
+            color: #dc3545;
+            text-decoration: none;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Student Portal Dashboard</h1>
+        
+        <div class="user-info">
+            <strong>Logged in as:</strong> <%= user.username %>
+            <span class="role-badge"><%= user.role %></span>
+        </div>
+        
+        <div class="warning">
+             <strong>Security Demo Notice:</strong> This application contains both VULNERABLE and SECURE versions of features for educational comparison.
+        </div>
+        
+        <div class="nav-grid">
+            <!-- Search Features -->
+            <div class="nav-card">
+                <h3>Grade Search</h3>
+                <p>Search for student grades by name or course.</p>
+                <a href="/search" class="secure"> Secure Search</a><br>
+                <a href="/search-vulnerable" class="vulnerable"> Vulnerable Search</a>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    <em>Try: <code>' OR '1'='1</code> in vulnerable version</em>
+                </p>
+            </div>
+            
+            <!-- File Upload -->
+            <div class="nav-card">
+                <h3>File Upload</h3>
+                <p>Upload profile pictures or documents.</p>
+                <a href="/upload"> Go to Upload Page</a>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    <em>Secure: PNG/PDF only, max 1MB</em>
+                </p>
+            </div>
+            
+            <!-- Admin Panel (only visible to admin) -->
+            <% if (user.role === 'admin') { %>
+            <div class="nav-card">
+                <h3>Admin Panel</h3>
+                <p>View all grades and manage system.</p>
+                <a href="/admin" class="secure">Secure Admin</a><br>
+                <a href="/admin-vulnerable" class="vulnerable">Vulnerable Admin</a>
+            </div>
+            <% } %>
+        </div>
+        
+        <div class="logout">
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+</body>
+</html>
