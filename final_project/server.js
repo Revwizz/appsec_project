@@ -519,3 +519,56 @@ app.post('/upload', isAuthenticated, (req, res, next) => {
         );
     });
 });
+// ============================================
+// ROUTES: ADMIN PANEL
+// ============================================
+
+/**
+ * GET /admin-vulnerable
+ * VULNERABLE ADMIN PANEL - No role check
+ * Any authenticated user can access
+ * FOR DEMONSTRATION PURPOSES ONLY
+ * 
+ * VULNERABILITY: Missing authorization check
+ * OWASP A01: Broken Access Control
+ */
+app.get('/admin-vulnerable', isAuthenticated, (req, res) => {
+    // WARNING: No role check - any logged-in user can see this
+    auditLog(`Accessed VULNERABLE admin panel`, req.session.user.username);
+    
+    db.all('SELECT * FROM grades ORDER BY id', [], (err, rows) => {
+        if (err) {
+            logger.error(`Database error in admin-vulnerable: ${err.message}`);
+            return res.send('Database error.');
+        }
+        res.render('admin', { 
+            grades: rows, 
+            mode: 'VULNERABLE (No Role Check)',
+            user: req.session.user 
+        });
+    });
+});
+
+/**
+ * GET /admin
+ * SECURE ADMIN PANEL - RBAC enforced
+ * Only users with 'admin' role can access
+ * 
+ * SECURITY: isAdmin middleware checks user.role
+ * OWASP A01: Broken Access Control (Mitigated)
+ */
+app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
+    auditLog(`Accessed SECURE admin panel`, req.session.user.username);
+    
+    db.all('SELECT * FROM grades ORDER BY id', [], (err, rows) => {
+        if (err) {
+            logger.error(`Database error in admin: ${err.message}`);
+            return res.send('Database error.');
+        }
+        res.render('admin', { 
+            grades: rows, 
+            mode: 'SECURE (RBAC Enforced)',
+            user: req.session.user 
+        });
+    });
+});
