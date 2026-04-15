@@ -245,3 +245,104 @@ function isAdmin(req, res, next) {
 }
 
 console.log('Server initialized with security middleware.');
+
+// ============================================
+// ROUTES: AUTHENTICATION
+// ============================================
+
+/**
+ * GET /
+ * Redirects root to login page
+ */
+app.get('/', (req, res) => {
+    res.redirect('/login');
+});
+
+/**
+ * GET /login
+ * Renders the login form
+ */
+app.get('/login', (req, res) => {
+    // If already logged in, redirect to dashboard
+    if (req.session.user) {
+        return res.redirect('/dashboard');
+    }
+    res.render('login', { error: null });
+});
+
+/**
+ * POST /login
+ * Processes login form submission
+ * - Validates credentials against database
+ * - Uses bcrypt for password verification (A07)
+ * - Rate limited to prevent brute force (A07)
+ * - Logs all attempts (A09)
+ * 
+ * SECURITY NOTES:
+ * - Generic error message prevents user enumeration
+ * - Password is never stored in plain text
+ */
+app.post('/login', loginLimiter, async (req, res) => {
+    const { username, password } = req.body;
+    
+    // Input validation
+    if (!username || !password) {
+        auditLog('Login attempt with missing credentials', username || 'unknown');
+        return res.render('login', { error: 'Username and password are required.' });
+    }
+    
+    // Query database for user
+    // Parameterized query prevents SQL injection (A03)
+    db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
+        if (err) {
+            logger.error(`Database error during login: ${err.message}`);
+            return res.render('login', { error: 'An error occurred. Please try again.' });
+        }
+        
+        // User not found - generic error prevents enumeration
+        if (!user) {
+            auditLog(`Failed login - user not found: ${username}`, username);
+            return res.render('login', { error: 'Invalid username or password.' });
+        }
+        
+        // Verify password using bcrypt
+        const match = await bcrypt.compare(password, user.password);
+        if (match) {
+            // Successful login - create session
+            req.session.user = { 
+                id: user.id, 
+                username: user.username, 
+                role: user.role 
+            };
+            auditLog(`Successful login`, username);
+            return res.redirect('/dashboard');
+        } else {
+            // Wrong password
+            auditLog(`Failed login - wrong password: ${username}`, username);
+            return res.render('login', { error: 'Invalid username or password.' });
+        }
+    });
+});
+
+/**
+ * GET /logout
+ * Destroys session and redirects to login
+ */
+app.get('/logout', (req, res) => {
+    const username = req.session.user?.username;
+    req.session.destroy((err) => {
+        if (err) {
+            logger.error(`Logout error: ${err.message}`);
+        }
+        auditLog(`User logged out`, username);
+        res.redirect('/login');
+    });
+});
+
+/**
+ * GET /dashboard
+ * Main dashboard after login - displays available features
+ */
+app.get('/dashboard', isAuthenticated, (req, res) => {
+    res.render('dashboard', { user: req.session.user });
+});
