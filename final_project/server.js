@@ -346,3 +346,74 @@ app.get('/logout', (req, res) => {
 app.get('/dashboard', isAuthenticated, (req, res) => {
     res.render('dashboard', { user: req.session.user });
 });
+
+// ============================================
+// ROUTES: SEARCH FUNCTIONALITY
+// ============================================
+
+/**
+ * GET /search-vulnerable
+ * INTENTIONALLY VULNERABLE SEARCH - SQL INJECTION
+ * FOR DEMONSTRATION PURPOSES ONLY
+ * 
+ * VULNERABILITY: String concatenation in SQL query
+ * RISK: Attacker can extract all data or modify database
+ * OWASP A03: Injection
+ * 
+ * Try entering: ' OR '1'='1
+ * This will return ALL records in the grades table.
+ */
+app.get('/search-vulnerable', isAuthenticated, (req, res) => {
+    const query = req.query.q || '';
+    
+    // VULNERABLE: String concatenation - DO NOT USE IN PRODUCTION
+    const sql = `SELECT * FROM grades WHERE student_name LIKE '%${query}%' OR course LIKE '%${query}%'`;
+    
+    logger.warn(`VULNERABLE search executed with query: ${query} by ${req.session.user.username}`);
+    
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            logger.error(`SQL Error in vulnerable search: ${err.message}`);
+            return res.send('Database error occurred.');
+        }
+        res.render('search', { 
+            results: rows, 
+            query: query, 
+            mode: 'VULNERABLE (SQL Injection Possible)',
+            user: req.session.user 
+        });
+    });
+});
+
+/**
+ * GET /search
+ * SECURE SEARCH - PARAMETERIZED QUERY
+ * 
+ * SECURITY: Uses parameterized queries to prevent SQL injection
+ * OWASP A03: Injection (Mitigated)
+ * 
+ * The same payload ' OR '1'='1 will return no results
+ * because it's treated as a literal string, not SQL code.
+ */
+app.get('/search', isAuthenticated, (req, res) => {
+    const query = req.query.q || '';
+    
+    // SECURE: Parameterized query using placeholders
+    const sql = `SELECT * FROM grades WHERE student_name LIKE ? OR course LIKE ?`;
+    const searchPattern = `%${query}%`;
+    
+    auditLog(`Secure search executed`, req.session.user.username);
+    
+    db.all(sql, [searchPattern, searchPattern], (err, rows) => {
+        if (err) {
+            logger.error(`SQL Error in secure search: ${err.message}`);
+            return res.send('Database error occurred.');
+        }
+        res.render('search', { 
+            results: rows, 
+            query: query, 
+            mode: 'SECURE (Parameterized Query)',
+            user: req.session.user 
+        });
+    });
+});
