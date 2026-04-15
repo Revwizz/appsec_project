@@ -1,7 +1,7 @@
 /**
  * FILE: database.js
  * PROJECT: SECU2000 - Secure Student Portal
- * PROGRAMMER: [Your Name]
+ * PROGRAMMER: Ritik Vyas
  * DESCRIPTION:
  *   Database configuration and schema definition using SQLite.
  *   Creates four tables with meaningful relationships:

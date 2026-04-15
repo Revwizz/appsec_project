@@ -637,3 +637,44 @@ app.get('/setup', async (req, res) => {
         <p><em>Note: Remove or disable this /setup route in production!</em></p>
     `);
 });
+// ============================================
+// ERROR HANDLING MIDDLEWARE
+// ============================================
+/**
+ * Global error handler
+ * Hides stack traces from users to prevent information disclosure
+ * OWASP A05: Security Misconfiguration
+ */
+app.use((err, req, res, next) => {
+    logger.error(`Unhandled error: ${err.stack}`);
+    
+    // Don't leak stack traces to users
+    res.status(500).render('error', { 
+        message: 'Something went wrong. Please try again later.',
+        user: req.session.user
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).render('error', { 
+        message: 'Page not found.',
+        user: req.session.user
+    });
+});
+
+// ============================================
+// START SERVER
+// ============================================
+app.listen(PORT, () => {
+    console.log(`
+
+SECU2000 - Secure Student Portal                     
+Server running on http://localhost:${PORT}           
+                                                        
+IMPORTANT: Run /setup first to seed database         
+Admin: admin / admin123
+Student: student1 / user123 
+    `);
+    auditLog('Server started', 'system');
+});
