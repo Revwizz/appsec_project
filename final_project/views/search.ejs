@@ -1,0 +1,157 @@
+<!--
+    FILE: search.ejs
+    PROJECT: SECU2000 - Secure Student Portal
+    DESCRIPTION:
+        Search results view. Displays both vulnerable and secure search results.
+        Shows the mode (VULNERABLE/SECURE) prominently.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Grades</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .mode-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .mode-vulnerable {
+            background-color: #dc3545;
+            color: white;
+        }
+        .mode-secure {
+            background-color: #28a745;
+            color: white;
+        }
+        .search-form {
+            margin: 20px 0;
+        }
+        .search-form input {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .search-form button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .back-link {
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .injection-hint {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .no-results {
+            color: #666;
+            font-style: italic;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search Grades</h1>
+        
+        <div class="mode-badge <%= mode.includes('VULNERABLE') ? 'mode-vulnerable' : 'mode-secure' %>">
+            Mode: <%= mode %>
+        </div>
+        
+        <form method="GET" class="search-form">
+            <input type="text" name="q" placeholder="Enter student name or course" value="<%= query || '' %>">
+            <button type="submit">Search</button>
+        </form>
+        
+        <div class="back-link">
+            <a href="/dashboard">← Back to Dashboard</a>
+        </div>
+        
+        <% if (results && results.length > 0) { %>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Course</th>
+                        <th>Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% results.forEach(row => { %>
+                        <tr>
+                            <td><%= row.student_name %></td>
+                            <td><%= row.course %></td>
+                            <td><%= row.grade %></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else if (query) { %>
+            <p class="no-results">No results found for "<%= query %>".</p>
+        <% } %>
+        
+        <% if (mode.includes('VULNERABLE')) { %>
+            <div class="injection-hint">
+                <strong>SQL Injection Test:</strong> Try entering <code>' OR '1'='1</code> in the search box. 
+                This will return ALL records in the database due to SQL injection vulnerability.
+            </div>
+        <% } else { %>
+            <div class="injection-hint" style="background-color: #d4edda; border-color: #c3e6cb;">
+                <strong>Secure Search:</strong> The same SQL injection payload will return no results 
+                because parameterized queries treat user input as data, not executable code.
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

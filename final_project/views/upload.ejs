@@ -1,0 +1,110 @@
+<!--
+    FILE: upload.ejs
+    PROJECT: SECU2000 - Secure Student Portal
+    DESCRIPTION:
+        File upload page with both vulnerable and secure upload forms.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .upload-section {
+            margin: 30px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .secure-upload {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+        }
+        .vulnerable-upload {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        input[type="file"] {
+            margin: 15px 0;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .secure-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .vulnerable-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .back-link {
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .warning {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>File Upload</h1>
+        
+        <div class="back-link">
+            <a href="/dashboard">← Back to Dashboard</a>
+        </div>
+        
+        <!-- Secure Upload -->
+        <div class="upload-section secure-upload">
+            <h3>Secure Upload (Recommended)</h3>
+            <p>Only PNG, JPEG, and PDF files under 1MB are allowed.</p>
+            <form method="POST" action="/upload" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".png,.jpg,.jpeg,.pdf" required>
+                <button type="submit" class="secure-btn">Upload Securely</button>
+            </form>
+            <div class="warning">
+                <strong>Security Controls:</strong> File type validation, size limit (1MB), secure storage.
+            </div>
+        </div>
+        
+        <!-- Vulnerable Upload -->
+        <div class="upload-section vulnerable-upload">
+            <h3>Vulnerable Upload (For Demo Only)</h3>
+            <p>Accepts any file type and size - demonstrates security risks.</p>
+            <form method="POST" action="/upload-vulnerable" enctype="multipart/form-data">
+                <input type="file" name="file" required>
+                <button type="submit" class="vulnerable-btn">Upload Vulnerable</button>
+            </form>
+            <div class="warning">
+                <strong>Warning:</strong> No restrictions - accepts any file (malware, large files, etc.).
+            </div>
+        </div>
+    </div>
+</body>
+</html>
