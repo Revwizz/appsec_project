@@ -572,3 +572,68 @@ app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
         });
     });
 });
+
+// ============================================
+// ROUTES: DATABASE SETUP (RUN ONCE)
+// ============================================
+
+/**
+ * GET /setup
+ * Seeds the database with test users and sample grades
+ * WARNING: This route should be removed or disabled in production
+ * Run this once after first starting the application
+ */
+app.get('/setup', async (req, res) => {
+    const bcrypt = require('bcryptjs');
+    
+    // Hash passwords for test accounts
+    const adminHash = await bcrypt.hash('admin123', 10);
+    const userHash = await bcrypt.hash('user123', 10);
+    
+    // Clear existing data (optional)
+    db.run('DELETE FROM users');
+    db.run('DELETE FROM grades');
+    db.run('DELETE FROM files');
+    
+    // Insert test users
+    db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', 
+        ['admin', adminHash, 'admin'],
+        (err) => {
+            if (err) console.error('Error creating admin:', err.message);
+        });
+    
+    db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', 
+        ['student1', userHash, 'user'],
+        (err) => {
+            if (err) console.error('Error creating student:', err.message);
+        });
+    
+    // Insert sample grades
+    const sampleGrades = [
+        ['Ritik', 'Application Security', 'A'],
+        ['Cy Iver', 'Windows Network Programming', 'A+'],
+        ['Thanh', 'NoSQL', 'A-'],
+        ['Randie', 'Web Development', 'C']
+    ];
+    
+    sampleGrades.forEach(([name, course, grade]) => {
+        db.run('INSERT INTO grades (student_name, course, grade) VALUES (?, ?, ?)',
+            [name, course, grade],
+            (err) => {
+                if (err) console.error('Error inserting grade:', err.message);
+            });
+    });
+    
+    auditLog('Database seeded with test users and grades', 'system');
+    
+    res.send(`
+        <h2>Database Setup Complete</h2>
+        <p>Test accounts created:</p>
+        <ul>
+            <li><strong>Admin:</strong> admin / admin123</li>
+            <li><strong>Student:</strong> student1 / user123</li>
+        </ul>
+        <p><a href="/login">Go to Login</a></p>
+        <p><em>Note: Remove or disable this /setup route in production!</em></p>
+    `);
+});
